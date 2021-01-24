@@ -350,6 +350,22 @@ class ConfigCommands:
             self._config.update_mutables(save_yaml=not temp)
 
     @cmdutils.register(instance='config-commands')
+    @cmdutils.argument('option', completion=configmodel.option)
+    def config_replace(self, option: str, new_value: str,
+                           temp: bool = False) -> None:
+        """Replace an option with given value
+
+        Args:
+            option: The name of the option.
+            new_value: The new value set for the option
+            temp: Replace value temporarily until qutebrowser is closed.
+        """
+
+        with self._handle_config_error():
+            self._config.set_str(option, new_value, save_yaml=not temp)
+            option_value = self._config.get_mutable_obj(option)
+
+    @cmdutils.register(instance='config-commands')
     @cmdutils.argument('option', completion=configmodel.dict_option)
     def config_dict_remove(self, option: str, key: str,
                            temp: bool = False) -> None:
