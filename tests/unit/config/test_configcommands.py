@@ -441,6 +441,72 @@ class TestRemove:
                 match="never is not in aliases!"):
             commands.config_dict_remove('aliases', 'never')
 
+class TestReplace:
+
+    """Test :config-list-replace and :config-dict-replace."""
+
+    @pytest.mark.parametrize('value', ['25%', '50%'])
+    @pytest.mark.parametrize('temp', [True, False])
+    def test_list_replace(self, commands, config_stub, yaml_value, value, temp):
+        name = 'zoom.levels'
+        commands.config_list_remove(name, value, temp=temp)
+
+        assert value not in config_stub.get(name)
+        if temp:
+            assert yaml_value(name) == usertypes.UNSET
+        else:
+            assert value not in yaml_value(name)
+
+    def test_list_replace_invalid_option(self, commands):
+        with pytest.raises(
+                cmdutils.CommandError,
+                match="No option 'nonexistent'"):
+            commands.config_list_remove('nonexistent', 'value')
+
+    def test_list_replace_non_list(self, commands):
+        with pytest.raises(
+                cmdutils.CommandError,
+                match=":config-list-remove can only be used for lists"):
+            commands.config_list_remove('content.javascript.enabled',
+                                        'never')
+
+    def test_list_replace_no_value(self, commands):
+        with pytest.raises(
+                cmdutils.CommandError,
+                match="never is not in colors.completion.fg!"):
+            commands.config_list_remove('colors.completion.fg', 'never')
+
+    @pytest.mark.parametrize('key', ['w', 'q'])
+    @pytest.mark.parametrize('temp', [True, False])
+    def test_dict_replace(self, commands, config_stub, yaml_value, key, temp):
+        name = 'aliases'
+        commands.config_dict_remove(name, key, temp=temp)
+
+        assert key not in config_stub.get(name)
+        if temp:
+            assert yaml_value(name) == usertypes.UNSET
+        else:
+            assert key not in yaml_value(name)
+
+    def test_dict_replace_invalid_option(self, commands):
+        with pytest.raises(
+                cmdutils.CommandError,
+                match="No option 'nonexistent'"):
+            commands.config_dict_remove('nonexistent', 'key')
+
+    def test_dict_replace_non_dict(self, commands):
+        with pytest.raises(
+                cmdutils.CommandError,
+                match=":config-dict-remove can only be used for dicts"):
+            commands.config_dict_remove('content.javascript.enabled',
+                                        'never')
+
+    def test_dict_replace_no_value(self, commands):
+        with pytest.raises(
+                cmdutils.CommandError,
+                match="never is not in aliases!"):
+            commands.config_dict_remove('aliases', 'never')
+
 
 class TestUnsetAndClear:
 

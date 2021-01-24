@@ -350,10 +350,41 @@ class ConfigCommands:
             self._config.update_mutables(save_yaml=not temp)
 
     @cmdutils.register(instance='config-commands')
-    @cmdutils.argument('option', completion=configmodel.option)
-    def config_replace(self, option: str, new_value: str,
+    @cmdutils.argument('option', completion=configmodel.list_option)
+    def config_list_replace(self, option: str, value: str, new_value: str,
                            temp: bool = False) -> None:
-        """Replace an option with given value
+        """Replace a value in a list with a given value.
+
+        Args:
+            option: The name of the option.
+            value: The list value to replace.
+            new_value: The new value set for the option.
+            temp: Replace value temporarily until qutebrowser is closed.
+        """
+
+        with self._handle_config_error():
+            opt = self._config.get_opt(option)
+        valid_list_types = (configtypes.List, configtypes.ListOrValue)
+        if not isinstance(opt.typ, valid_list_types):
+            raise cmdutils.CommandError(":config-list-remove can only be used "
+                                        "for lists")
+
+        with self._handle_config_error():
+            option_value = self._config.get_mutable_obj(option)
+
+            if value not in option_value:
+                raise cmdutils.CommandError("{} is not in {}!".format(
+                    value, option))
+
+            option_value.replace(value, new_value)
+
+            self._config.update_mutables(save_yaml=not temp)
+
+    @cmdutils.register(instance='config-commands')
+    @cmdutils.argument('option', completion=configmodel.option)
+    def config_dict_replace(self, option: str, new_value: str,
+                           temp: bool = False) -> None:
+        """Replace a value in a list
 
         Args:
             option: The name of the option.
@@ -362,8 +393,21 @@ class ConfigCommands:
         """
 
         with self._handle_config_error():
-            self._config.set_str(option, new_value, save_yaml=not temp)
+            opt = self._config.get_opt(option)
+        if not isinstance(opt.typ, configtypes.Dict):
+            raise cmdutils.CommandError(":config-dict-add can only be used "
+                                        "for dicts")
+
+        with self._handle_config_error():
             option_value = self._config.get_mutable_obj(option)
+
+            if key in option_value and not replace:
+                raise cmdutils.CommandError("{} already exists in {} - use "
+                                            "--replace to overwrite!"
+                                            .format(key, option))
+
+            option_value[key] = value
+            self._config.update_mutables(save_yaml=not temp)
 
     @cmdutils.register(instance='config-commands')
     @cmdutils.argument('option', completion=configmodel.dict_option)
